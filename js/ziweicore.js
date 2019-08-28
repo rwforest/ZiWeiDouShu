@@ -3,7 +3,7 @@ var ziwei = {
 	y:null, m:null, d:null, h:null, g:null, l:null, b:null, f:null, s4:null, z:null,
 	yS:null, mS:null, dS:null, LunarDay:null, ShengXiao:null,
 	y1Pos:null,	y2Pos:null,	hPos:null,	lPos:null,	bPos:null,	zPos:null, Palce:null,
-	Place12:null,
+	Place12:null,lunar:null,
 	//排紫微命盤
 	computeZiWei:function (y_Solar,m_Solar,d_Solar,h_Solar,g_Solar){
 		//y:年,m:月,d:日,h:時,g:性別,l:命宮,b:身宮,f:五行局,s:起紫微表,s4:四化星;
@@ -11,17 +11,18 @@ var ziwei = {
 		mS=m_Solar;
 		dS=d_Solar;
 		//取得農曆時辰，排紫微命盤
-		Lunar(0,yS,mS,dS);
-		y=HeavenlyStems[(yS - 4) % 10]+EarthlyBranches[(yS - 4) % 12];
+		lunar = new Lunar(new Date(yS,mS-1,dS));
+		y=GanGB[lunar.gan]+ZhiGB[lunar.zhi];//HeavenlyStems[(yS - 4) % 10]+EarthlyBranches[(yS - 4) % 12];
 		m=lunar.m;
 		d=lunar.d;
 		h=h_Solar;
 		g=g_Solar;
 		//年:天干地支
+		console.log(y);
 		y1Pos=HeavenlyStems.indexOf(y.substring(0,1));
 		y2Pos=EarthlyBranches.indexOf(y.substring(1,2));
 		//時:地支
-		hPos=EarthlyBranches.indexOf(h);	
+		hPos=EarthlyBranches.indexOf(h);
 		//設定紫微斗數
 		this.setZiwei(d);
 		//stepSetStar
@@ -29,7 +30,7 @@ var ziwei = {
 		return Place12;
 	},
 	//CenterPart↑↓
-	getLunarDay:function(){return GanGB[gan.y]+ZhiGB[zhi.y]+" 年 "+(lunar.l?"閏":"")+lunar.m+" 月 "+lunar.d+" 日 " + h + " 時";},
+	getLunarDay:function(){return GanGB[lunar.gan]+ZhiGB[lunar.zhi]+" 年 "+(lunar.isLeapMonth()?"閏":"")+lunar.m+" 月 "+lunar.d+" 日 " + h + " 時";},
 	getSolarDay:function(){return yS+ " 年 " + mS + " 月 " + dS + " 日" + h + " 時";},
 	getShengXiao:function(){return ShengXiaoGB[(yS - 4) % 12];},
 	getFiveElement:function(){return f;},
@@ -70,19 +71,19 @@ var ziwei = {
 		var sZ06=this.getStarArr(Star_Z06,7,zPos);
 		var sT08=this.getStarArr(Star_T08,8,sZ06[6]);
 		//0:文昌 1:文曲 (時) 2:左輔 3:右弼 (月) 4:天魁 5:天鉞 6:祿存(年干)
-		var sG07=this.getStarArrByPosArr(Star_G07,7,[hPos,hPos,m-1,m-1,y1Pos,y1Pos,y1Pos]);
+		var sG07=this.getStarArrByPosArr(Star_G07,8,[hPos,hPos,m-1,m-1,m-1,y1Pos,y1Pos,y1Pos]);
 		//四化星
 		var sS04=this.getStarArr(Star_S04,4,y1Pos);
 		//六凶星
 		var sB06=[Star_B06[0][y1Pos],Star_B06[1][y1Pos],Star_B06[2][y2Pos%4][hPos],Star_B06[3][y2Pos%4][hPos],Star_B06[4][hPos],Star_B06[5][hPos] ];
 		//其他
-		var OS05=this.getStarArr(Star_OS5,5,y2Pos);
+		var OS05=this.getStarArr(Star_OS5,7,y2Pos);
 		Place12=new Array(12);
 		//準備開始組星星
 		for (i=0;i<12;i++){
 			var StarA,StarB,StarC,Star6,lenStar=[0,0,0,0];
 			StarA=[];StarB=[];StarC=[];Star6=[];
-			//紫微星系 & 六凶星 
+			//紫微星系 & 六凶星
 			for (k=0;k<6;k++){
 				if (sZ06[k]==i){ StarA[lenStar[0]]=StarM_A14[k]+this.getS04Str(StarM_A14[k],sS04); lenStar[0]+=1; }
 				if (sB06[k]==i){ StarB[lenStar[1]]=StarM_B06[k]; lenStar[1]+=1;}
@@ -92,11 +93,11 @@ var ziwei = {
 				if (sT08[k]==i){ StarA[lenStar[0]]=StarM_A14[k+6]+this.getS04Str(StarM_A14[k+6],sS04); lenStar[0]+=1; }
 			}
 			//六吉星
-			for (k=0;k<7;k++){
+			for (k=0;k<8;k++){
 				if (sG07[k]==i){ Star6[lenStar[3]]=StarM_A07[k]+this.getS04Str(StarM_A07[k],sS04); lenStar[3]+=1; }
 			}
 			//其他星矅StarO_S0.length
-			for (k=0;k<5;k++){
+			for (k=0;k<7;k++){
 				if (OS05[k]==i){ StarC[lenStar[2]]=StarO_S05[k]; lenStar[2]+=1;}
 			}
 			//塞入位置

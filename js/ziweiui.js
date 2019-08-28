@@ -1,3 +1,9 @@
+Date.prototype.addDays = function(days) {
+    var date = new Date(this.valueOf());
+    date.setDate(date.getDate() + days);
+    return date;
+}
+
 /*紫微斗數 Chinese Astrology Zi Wei Dou Shu*/
 var ziweiUI = {
 	//主星列印方向 true:由右向左,false:由左向右
@@ -14,18 +20,18 @@ var ziweiUI = {
 	getNowDate:function(){
 		var Today=new Date();
 		var h=Today.getHours();
-		Today.setDate(Today.getDate()+(h>=23?1:0)); 
+		Today.setDate(Today.getDate()+(h>=23?1:0));
 		document.getElementById("sel_Year").value=Today.getFullYear();
 		document.getElementById("sel_Month").value=Today.getMonth()+1;
 		document.getElementById("sel_Day").value=Today.getDate();
 		document.getElementById("sel_Hour").value=EarthlyBranches[(h+(h%2?1:0))%24/2];
 	},
-	//initial    	  
+	//initial
 	initial:function (){
 	  //畫紫微斗數空表格
 	  document.getElementById("container").innerHTML="<div id='queryDiv'><h2>紫微斗數命盤</h2><div>西元<select id='sel_Year'></select> 年<select id='sel_Month'></select> 月<select id='sel_Day'></select> 日<select id='sel_Hour'></select> 時<input type='radio' id='gender' name='gender' value='M' checked>男<input type='radio' name='gender' value='F'>女<input type='button' value='現在時間*' id='btnNowDate'></div></div><div class='ziwei'><div><div id='zw6'></div><div id='zw7'></div><div id='zw8'></div><div id='zw9'></div></div><div><div id='zw5'></div><div id='zw4'></div><div id='zwHome' class='zwDivCenter'></div><div id='zw10'></div><div id='zw11'></div></div><div><div id='zw3'></div><div id='zw2'></div><div id='zw1'></div><div id='zw12'></div></div></div>";
 	  function addOption(id,a,b){
-	  	for (i=a;i<=b;i++){ 
+	  	for (i=a;i<=b;i++){
 				let op = document.createElement('option');
 	      op.value = i;
 	      op.innerHTML = i;
@@ -35,28 +41,43 @@ var ziweiUI = {
 	  addOption("sel_Year",1900,2049);
 	  addOption("sel_Month",1,12);
 	  addOption("sel_Day",1,31);
-	  for (i=0;i<EarthlyBranches.length;i++){ 
+	  for (i=0;i<=EarthlyBranches.length;i++){
 	  	let op = document.createElement('option');
-	  	op.value = EarthlyBranches[i];
-	    op.innerHTML = EarthlyBranches[i]+"【"+((24+(i*2-1))%24).toString()+"~"+ (i*2+1).toString()+"】";
-	  	document.getElementById("sel_Hour").appendChild(op);
+
+			if (i === 0)
+			{
+				op.value = "子";
+		    op.innerHTML = "早子【00~1】";
+		  	document.getElementById("sel_Hour").appendChild(op);
+			}
+			else if (i < 12)
+			{
+				op.value = EarthlyBranches[i];
+		    op.innerHTML = EarthlyBranches[i]+"【"+((24+(i*2-1))%24).toString()+"~"+ (i*2+1).toString()+"】";
+		  	document.getElementById("sel_Hour").appendChild(op);
+			}
+			else {
+				op.value = "夜子";
+		    op.innerHTML = "夜子【23~00】";
+		  	document.getElementById("sel_Hour").appendChild(op);
+			}
 	  }
 	  //初始日期
 	  this.genNowDateZiwei();
 	  this.resize();
 	},
 	clearPalce:function (){
-		for (i=0;i<12;i++){ 
+		for (i=0;i<12;i++){
 			document.getElementById("zw"+(i+1).toString()).innerHTML="<div class='MangA'>" +EarthlyBranches[i]+ "</div>";
 		}
 	},
 	cleanZiwei:function (){
-		//$("#zwHome").html(""); 
+		//$("#zwHome").html("");
 		document.getElementById("zwHome").innerHTML = "";
 		this.clearPalce();
 	},
 	genZiwei:function(){
-		
+
 		let gender=	document.querySelectorAll("input[type=radio]");
 		let genderValue="M";
 		for (i=0;i<gender.length;i++){
@@ -65,11 +86,26 @@ var ziweiUI = {
 					break;
 				}
 		}
-		var zw = ziwei.computeZiWei( document.getElementById("sel_Year").value, document.getElementById("sel_Month").value, document.getElementById("sel_Day").value, document.getElementById("sel_Hour").value, genderValue);
+
+		var selYear, selMonth, selDay, selHour;
+		selYear = document.getElementById("sel_Year").value;
+		selMonth = document.getElementById("sel_Month").value;
+		selDay = document.getElementById("sel_Day").value;
+		selHour = document.getElementById("sel_Hour").value;
+
+		var date = new Date(selYear, selMonth - 1, selDay);
+		if (selHour === "夜子" || selHour === "早子")
+		{
+			if (selHour === "夜子")
+				date = date.addDays(1);
+			selHour = "子";
+		}
+
+		var zw = ziwei.computeZiWei( date.getFullYear(), date.getMonth() + 1, date.getDate(), selHour, genderValue);
 		document.getElementById("zwHome").innerHTML = "國曆：" + ziwei.getSolarDay() + "<br>"
 					+ "農曆：" + ziwei.getLunarDay()+ "<br>"
 					+ "生肖：【" + ziwei.getShengXiao() + "】"+"<br>"
-					+ "<div>"+ ziwei.getFiveElement() +"</div>" 
+					+ "<div>"+ ziwei.getFiveElement() +"</div>"
 					+ "<div>"+ ziwei.getYinYangGender()+"</div>"
 					+ "<div class='zwcopy'>by cubshuang</div>";
 	  //render Direction
@@ -77,7 +113,7 @@ var ziweiUI = {
 		if(this.right2left){ styleLR.reverse(); }
 		//render Star
 	    for (i=0;i<12;i++){
-	  		document.getElementById("zw"+(i+1).toString()).innerHTML+=    
+	  		document.getElementById("zw"+(i+1).toString()).innerHTML+=
 	  				"<div class='MangA'>" + zw[i].MangA + "</div>" +
 						"<div class='MangB'>" + zw[i].MangB + "</div>" +
 						"<div class='MangC'>" + zw[i].MangC + "</div>" +
@@ -91,7 +127,7 @@ var ziweiUI = {
 	  			tmpSatrA[1][k]=zw[i].StarA[j].substring(1,2);
 	  			tmpSatrA[2][k]=(zw[i].StarA[j].length>2)?"<span>"+zw[i].StarA[j].substring(3,4)+"</span>":"　";
 				k+=1;
-			}	
+			}
 			for (j=0;j<zw[i].Star6.length;j++){
 		  		tmpSatrA[0][k]="<span>"+zw[i].Star6[j].substring(0,1)+"</span>"
 		  		tmpSatrA[1][k]="<span>"+zw[i].Star6[j].substring(1,2)+"</span>"
@@ -136,11 +172,11 @@ window.addEventListener('load' ,function(){
 	document.getElementById("btnNowDate").addEventListener('click',function () {ziweiUI.genNowDateZiwei();});
 	let s = document.querySelectorAll("select");
 	for (i=0;i<s.length;i++){
-		s[i].addEventListener('change',function () {ziweiUI.genZiwei();});	
+		s[i].addEventListener('change',function () {ziweiUI.genZiwei();});
 	}
 	let r=document.querySelectorAll("input[type=radio]");
 	for (i=0;i<r.length;i++){
-		r[i].addEventListener('change',function () {ziweiUI.genZiwei();});	
+		r[i].addEventListener('change',function () {ziweiUI.genZiwei();});
 	}
 	window.addEventListener('resize',function() { ziweiUI.resize();});
 	//$(window).resize(function() { ziweiUI.resize();});
